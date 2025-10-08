@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ResumeMatch.ai</title>
+    <script type="text/javascript">
+      // Redirect all unknown paths back to index.html while preserving hash
+      const redirectToIndex = () => {
+        const base = "/resumeaimatch/";
+        const path = window.location.pathname.replace(base, "");
+        window.location.replace(base + "#" + path);
+      };
+      redirectToIndex();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>
