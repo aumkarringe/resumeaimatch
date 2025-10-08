@@ -1,12 +1,78 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { HeroSection } from "@/components/HeroSection";
+import { UploadSection } from "@/components/UploadSection";
+import { JobDescriptionSection } from "@/components/JobDescriptionSection";
+import { AnalysisSection, AnalysisResults } from "@/components/AnalysisSection";
+import { ResultsSection } from "@/components/ResultsSection";
+import { extractTextFromPDF } from "@/lib/pdfParser";
+import { toast } from "@/hooks/use-toast";
+
+type Step = "hero" | "upload" | "job-description" | "analysis" | "results";
 
 const Index = () => {
+  const [currentStep, setCurrentStep] = useState<Step>("hero");
+  const [resumeText, setResumeText] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [results, setResults] = useState<AnalysisResults | null>(null);
+
+  const handleFileUpload = async (file: File) => {
+    try {
+      const text = await extractTextFromPDF(file);
+      setResumeText(text);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to parse PDF. Please try another file.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAnalyze = (description: string) => {
+    setJobDescription(description);
+    setCurrentStep("analysis");
+  };
+
+  const handleAnalysisComplete = (analysisResults: AnalysisResults) => {
+    setResults(analysisResults);
+    setCurrentStep("results");
+  };
+
+  const handleReset = () => {
+    setCurrentStep("hero");
+    setResumeText("");
+    setJobDescription("");
+    setResults(null);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen">
+      {currentStep === "hero" && (
+        <HeroSection onGetStarted={() => setCurrentStep("upload")} />
+      )}
+      
+      {currentStep === "upload" && (
+        <UploadSection
+          onFileUpload={handleFileUpload}
+          onNext={() => setCurrentStep("job-description")}
+        />
+      )}
+      
+      {currentStep === "job-description" && (
+        <JobDescriptionSection onAnalyze={handleAnalyze} />
+      )}
+      
+      {currentStep === "analysis" && (
+        <AnalysisSection
+          resumeText={resumeText}
+          jobDescription={jobDescription}
+          onComplete={handleAnalysisComplete}
+        />
+      )}
+      
+      {currentStep === "results" && results && (
+        <ResultsSection results={results} onReset={handleReset} />
+      )}
     </div>
   );
 };
