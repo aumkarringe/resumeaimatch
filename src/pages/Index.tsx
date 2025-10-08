@@ -4,7 +4,7 @@ import { UploadSection } from "@/components/UploadSection";
 import { JobDescriptionSection } from "@/components/JobDescriptionSection";
 import { AnalysisSection, AnalysisResults } from "@/components/AnalysisSection";
 import { ResultsSection } from "@/components/ResultsSection";
-import { extractTextFromPDF } from "@/lib/pdfParser";
+import { extractTextFromFile } from "@/lib/textParser";
 import { toast } from "@/hooks/use-toast";
 
 type Step = "hero" | "upload" | "job-description" | "analysis" | "results";
@@ -17,12 +17,12 @@ const Index = () => {
 
   const handleFileUpload = async (file: File) => {
     try {
-      const text = await extractTextFromPDF(file);
+      const text = await extractTextFromFile(file);
       setResumeText(text);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to parse PDF. Please try another file.",
+        description: "Failed to read text file. Please try another file.",
         variant: "destructive",
       });
     }

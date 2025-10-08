@@ -20,7 +20,7 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
       setIsDragging(false);
 
       const droppedFile = e.dataTransfer.files[0];
-      if (droppedFile && droppedFile.type === "application/pdf") {
+      if (droppedFile && droppedFile.type === "text/plain") {
         setFile(droppedFile);
         onFileUpload(droppedFile);
         toast({
@@ -30,7 +30,7 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
       } else {
         toast({
           title: "Invalid file",
-          description: "Please upload a PDF file.",
+          description: "Please upload a TXT file.",
           variant: "destructive",
         });
       }
@@ -41,12 +41,18 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
   const handleFileInput = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFile = e.target.files?.[0];
-      if (selectedFile && selectedFile.type === "application/pdf") {
+      if (selectedFile && selectedFile.type === "text/plain") {
         setFile(selectedFile);
         onFileUpload(selectedFile);
         toast({
           title: "Resume uploaded!",
           description: "Your resume has been successfully uploaded.",
+        });
+      } else {
+        toast({
+          title: "Invalid file",
+          description: "Please upload a TXT file.",
+          variant: "destructive",
         });
       }
     },
@@ -64,7 +70,7 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
           Upload Your Resume
         </h2>
         <p className="text-muted-foreground text-center mb-8">
-          Upload your PDF resume to get started with the analysis
+          Upload your TXT resume to get started with the analysis
         </p>
 
         <motion.div
@@ -91,12 +97,12 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
                 size="lg"
                 onClick={() => fileInputRef.current?.click()}
               >
-                Select PDF File
+                Select TXT File
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".txt"
                 onChange={handleFileInput}
                 className="hidden"
               />
