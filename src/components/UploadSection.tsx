@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Upload, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ interface UploadSectionProps {
 export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -79,22 +80,27 @@ export const UploadSection = ({ onFileUpload, onNext }: UploadSectionProps) => {
           whileHover={{ scale: 1.02 }}
         >
           {!file ? (
-            <label className="flex flex-col items-center justify-center cursor-pointer">
+            <div className="flex flex-col items-center justify-center">
               <Upload className="w-16 h-16 text-primary mb-4 animate-float" />
               <p className="text-xl font-semibold mb-2">
                 Drop your resume here
               </p>
               <p className="text-muted-foreground mb-4">or click to browse</p>
-              <Button variant="hero" size="lg">
+              <Button 
+                variant="hero" 
+                size="lg"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 Select PDF File
               </Button>
               <input
+                ref={fileInputRef}
                 type="file"
                 accept=".pdf"
                 onChange={handleFileInput}
                 className="hidden"
               />
-            </label>
+            </div>
           ) : (
             <div className="flex flex-col items-center">
               <FileText className="w-16 h-16 text-primary mb-4" />
