@@ -80,44 +80,86 @@ export const AnalysisSection = ({ onComplete, resumeText, jobDescription }: Anal
   );
 };
 
-// Simple keyword matching algorithm
+// Technology-focused matching algorithm
 function analyzeResume(resumeText: string, jobDescription: string): AnalysisResults {
-  // Convert to lowercase and remove punctuation
-  const cleanText = (text: string) =>
-    text
-      .toLowerCase()
-      .replace(/[^\w\s]/g, " ")
-      .split(/\s+/)
-      .filter((word) => word.length > 3);
+  // Common technology keywords and patterns
+  const techPatterns = [
+    // Programming Languages
+    "javascript", "typescript", "python", "java", "c++", "c#", "ruby", "php", "swift", "kotlin",
+    "go", "rust", "scala", "perl", "r", "matlab", "sql", "html", "css",
+    
+    // Frameworks & Libraries
+    "react", "angular", "vue", "svelte", "next.js", "nextjs", "node.js", "nodejs", "express",
+    "django", "flask", "spring", "laravel", "rails", "asp.net", "jquery", "bootstrap", "tailwind",
+    
+    // Databases
+    "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "cassandra", "oracle", "sqlite",
+    "dynamodb", "firebase", "supabase",
+    
+    // Cloud & DevOps
+    "aws", "azure", "gcp", "docker", "kubernetes", "jenkins", "terraform", "ansible", "git",
+    "github", "gitlab", "ci/cd", "cicd",
+    
+    // Tools & Platforms
+    "linux", "unix", "windows", "macos", "vscode", "intellij", "eclipse", "jira", "confluence",
+    "slack", "trello", "figma", "sketch", "photoshop",
+    
+    // Methodologies & Concepts
+    "agile", "scrum", "kanban", "devops", "microservices", "api", "rest", "graphql", "oauth",
+    "jwt", "testing", "tdd", "bdd", "ci", "cd",
+    
+    // Data & AI
+    "machine learning", "deep learning", "tensorflow", "pytorch", "pandas", "numpy", "scikit-learn",
+    "data analysis", "data science", "nlp", "computer vision",
+  ];
 
-  // Extract keywords from job description
-  const stopWords = new Set([
-    "with", "and", "the", "for", "this", "that", "will", "from", "have",
-    "would", "should", "could", "must", "about", "into", "through", "during",
-  ]);
+  // Extract technologies from text
+  const extractTechnologies = (text: string): Set<string> => {
+    const lowerText = text.toLowerCase();
+    const found = new Set<string>();
+    
+    for (const tech of techPatterns) {
+      // Use word boundaries to match whole words/phrases
+      const regex = new RegExp(`\\b${tech.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (regex.test(lowerText)) {
+        found.add(tech);
+      }
+    }
+    
+    return found;
+  };
 
-  const jobWords = cleanText(jobDescription).filter((word) => !stopWords.has(word));
-  const resumeWords = new Set(cleanText(resumeText));
+  // Extract technologies from both texts
+  const jobTechnologies = extractTechnologies(jobDescription);
+  const resumeTechnologies = extractTechnologies(resumeText);
 
-  // Find matched and missing keywords
-  const matchedKeywords = [...new Set(jobWords.filter((word) => resumeWords.has(word)))];
-  const missingKeywords = [...new Set(jobWords.filter((word) => !resumeWords.has(word)))].slice(0, 12);
+  // Find matched and missing technologies
+  const matchedKeywords = [...jobTechnologies].filter(tech => resumeTechnologies.has(tech));
+  const missingKeywords = [...jobTechnologies].filter(tech => !resumeTechnologies.has(tech));
 
-  // Calculate score
-  const score = Math.min(Math.round((matchedKeywords.length / jobWords.length) * 100), 100);
+  // Calculate score based on technology match
+  const score = jobTechnologies.size > 0
+    ? Math.min(Math.round((matchedKeywords.length / jobTechnologies.size) * 100), 100)
+    : 0;
 
   // Generate suggestions
-  const suggestions = [
-    `Add ${missingKeywords.slice(0, 5).join(", ")} to strengthen your resume`,
-    "Quantify your achievements with specific numbers and metrics",
-    "Use action verbs to describe your responsibilities",
-    "Tailor your summary to highlight relevant experience",
-  ];
+  const suggestions = [];
+  
+  if (missingKeywords.length > 0) {
+    suggestions.push(`Add these technologies to your resume: ${missingKeywords.slice(0, 5).join(", ")}`);
+  }
+  
+  if (matchedKeywords.length > 0) {
+    suggestions.push(`Highlight your experience with ${matchedKeywords.slice(0, 3).join(", ")} in your summary`);
+  }
+  
+  suggestions.push("Quantify your technical achievements with specific metrics and results");
+  suggestions.push("Include relevant projects or portfolio links showcasing these technologies");
 
   return {
     score,
-    matchedKeywords: matchedKeywords.slice(0, 15),
-    missingKeywords,
+    matchedKeywords: matchedKeywords.slice(0, 20),
+    missingKeywords: missingKeywords.slice(0, 15),
     suggestions,
   };
 }
