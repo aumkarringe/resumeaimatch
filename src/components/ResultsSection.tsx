@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, XCircle, Lightbulb, TrendingUp } from "lucide-react";
+import { CheckCircle2, XCircle, Lightbulb, TrendingUp, Sparkles, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -111,11 +111,86 @@ export const ResultsSection = ({ results, onReset }: ResultsSectionProps) => {
           </motion.div>
         </div>
 
+        {/* STAR Format Points */}
+        {results.starFormatPoints && results.starFormatPoints.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mb-8"
+          >
+            <Card className="glass p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-primary/10 p-2 rounded-lg">
+                  <Sparkles className="text-primary" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">STAR Format Resume Points</h3>
+                  <p className="text-sm text-muted-foreground">
+                    AI-generated bullet points for your resume
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                {results.starFormatPoints.map((point, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.7 + index * 0.1 }}
+                    className="flex items-start gap-3 p-4 bg-background/50 rounded-lg border-l-2 border-primary"
+                  >
+                    <p className="text-foreground">{point}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ATS Optimizations */}
+        {results.atsOptimizations && results.atsOptimizations.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7 }}
+            className="mb-8"
+          >
+            <Card className="glass p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-accent/10 p-2 rounded-lg">
+                  <Target className="text-accent" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">ATS Optimization Tips</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Make your resume ATS-friendly
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {results.atsOptimizations.map((tip, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.8 + index * 0.1 }}
+                    className="flex items-start gap-3 p-4 bg-background/50 rounded-lg"
+                  >
+                    <CheckCircle2 className="text-accent mt-1 flex-shrink-0" size={20} />
+                    <p className="text-foreground">{tip}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Suggestions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
+          transition={{ delay: 0.8 }}
         >
           <Card className="glass p-6 mb-8">
             <div className="flex items-center gap-3 mb-6">
@@ -123,9 +198,9 @@ export const ResultsSection = ({ results, onReset }: ResultsSectionProps) => {
                 <Lightbulb className="text-accent" size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">Improvement Suggestions</h3>
+                <h3 className="text-xl font-semibold">General Suggestions</h3>
                 <p className="text-sm text-muted-foreground">
-                  Quick wins to boost your score
+                  Additional tips to improve your resume
                 </p>
               </div>
             </div>
@@ -135,7 +210,7 @@ export const ResultsSection = ({ results, onReset }: ResultsSectionProps) => {
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.7 + index * 0.1 }}
+                  transition={{ delay: 0.9 + index * 0.1 }}
                   className="flex items-start gap-3 p-4 bg-background/50 rounded-lg"
                 >
                   <TrendingUp className="text-accent mt-1 flex-shrink-0" size={20} />
@@ -150,7 +225,7 @@ export const ResultsSection = ({ results, onReset }: ResultsSectionProps) => {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 1.0 }}
           className="flex justify-center gap-4"
         >
           <Button variant="hero" size="lg" onClick={onReset}>

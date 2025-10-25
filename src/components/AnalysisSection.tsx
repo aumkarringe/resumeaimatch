@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { analyzeResumeWithGemini } from "@/lib/geminiClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnalysisSectionProps {
   onComplete: (results: AnalysisResults) => void;
   resumeText: string;
   jobDescription: string;
+  geminiApiKey: string;
 }
 
 export interface AnalysisResults {
@@ -13,34 +16,60 @@ export interface AnalysisResults {
   matchedKeywords: string[];
   missingKeywords: string[];
   suggestions: string[];
+  starFormatPoints: string[];
+  atsOptimizations: string[];
 }
 
-export const AnalysisSection = ({ onComplete, resumeText, jobDescription }: AnalysisSectionProps) => {
+export const AnalysisSection = ({ onComplete, resumeText, jobDescription, geminiApiKey }: AnalysisSectionProps) => {
   const [progress, setProgress] = useState(0);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate analysis progress
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(progressInterval);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    let progressInterval: NodeJS.Timeout;
+    let isCancelled = false;
 
-    // Perform actual analysis after 2 seconds
-    const analysisTimeout = setTimeout(() => {
-      const results = analyzeResume(resumeText, jobDescription);
-      onComplete(results);
-    }, 2000);
+    const performAnalysis = async () => {
+      // Simulate progress
+      progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 90) return 90; // Stop at 90% until API completes
+          return prev + 10;
+        });
+      }, 300);
+
+      try {
+        const results = await analyzeResumeWithGemini(resumeText, jobDescription, geminiApiKey);
+        
+        if (!isCancelled) {
+          setProgress(100);
+          setTimeout(() => {
+            onComplete(results);
+          }, 500);
+        }
+      } catch (error) {
+        console.error("Analysis error:", error);
+        if (!isCancelled) {
+          toast({
+            title: "Analysis Failed",
+            description: error instanceof Error ? error.message : "Failed to analyze resume. Please check your API key.",
+            variant: "destructive",
+          });
+          // Fallback to basic analysis
+          setProgress(100);
+          setTimeout(() => {
+            onComplete(analyzeResumeBasic(resumeText, jobDescription));
+          }, 500);
+        }
+      }
+    };
+
+    performAnalysis();
 
     return () => {
+      isCancelled = true;
       clearInterval(progressInterval);
-      clearTimeout(analysisTimeout);
     };
-  }, [resumeText, jobDescription, onComplete]);
+  }, [resumeText, jobDescription, geminiApiKey, onComplete, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -80,86 +109,36 @@ export const AnalysisSection = ({ onComplete, resumeText, jobDescription }: Anal
   );
 };
 
-// Technology-focused matching algorithm
-function analyzeResume(resumeText: string, jobDescription: string): AnalysisResults {
-  // Common technology keywords and patterns
+// Basic fallback analysis if Gemini fails
+function analyzeResumeBasic(resumeText: string, jobDescription: string): AnalysisResults {
   const techPatterns = [
-    // Programming Languages
     "javascript", "typescript", "python", "java", "c++", "c#", "ruby", "php", "swift", "kotlin",
-    "go", "rust", "scala", "perl", "r", "matlab", "sql", "html", "css",
-    
-    // Frameworks & Libraries
-    "react", "angular", "vue", "svelte", "next.js", "nextjs", "node.js", "nodejs", "express",
-    "django", "flask", "spring", "laravel", "rails", "asp.net", "jquery", "bootstrap", "tailwind",
-    
-    // Databases
-    "mysql", "postgresql", "mongodb", "redis", "elasticsearch", "cassandra", "oracle", "sqlite",
-    "dynamodb", "firebase", "supabase",
-    
-    // Cloud & DevOps
-    "aws", "azure", "gcp", "docker", "kubernetes", "jenkins", "terraform", "ansible", "git",
-    "github", "gitlab", "ci/cd", "cicd",
-    
-    // Tools & Platforms
-    "linux", "unix", "windows", "macos", "vscode", "intellij", "eclipse", "jira", "confluence",
-    "slack", "trello", "figma", "sketch", "photoshop",
-    
-    // Methodologies & Concepts
-    "agile", "scrum", "kanban", "devops", "microservices", "api", "rest", "graphql", "oauth",
-    "jwt", "testing", "tdd", "bdd", "ci", "cd",
-    
-    // Data & AI
-    "machine learning", "deep learning", "tensorflow", "pytorch", "pandas", "numpy", "scikit-learn",
-    "data analysis", "data science", "nlp", "computer vision",
+    "react", "angular", "vue", "node.js", "django", "flask", "spring", "aws", "azure", "docker",
+    "kubernetes", "sql", "mongodb", "postgresql", "git", "agile", "rest", "api", "ci/cd"
   ];
 
-  // Extract technologies from text
   const extractTechnologies = (text: string): Set<string> => {
     const lowerText = text.toLowerCase();
     const found = new Set<string>();
-    
     for (const tech of techPatterns) {
-      // Use word boundaries to match whole words/phrases
       const regex = new RegExp(`\\b${tech.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-      if (regex.test(lowerText)) {
-        found.add(tech);
-      }
+      if (regex.test(lowerText)) found.add(tech);
     }
-    
     return found;
   };
 
-  // Extract technologies from both texts
   const jobTechnologies = extractTechnologies(jobDescription);
   const resumeTechnologies = extractTechnologies(resumeText);
-
-  // Find matched and missing technologies
   const matchedKeywords = [...jobTechnologies].filter(tech => resumeTechnologies.has(tech));
   const missingKeywords = [...jobTechnologies].filter(tech => !resumeTechnologies.has(tech));
-
-  // Calculate score based on technology match
-  const score = jobTechnologies.size > 0
-    ? Math.min(Math.round((matchedKeywords.length / jobTechnologies.size) * 100), 100)
-    : 0;
-
-  // Generate suggestions
-  const suggestions = [];
-  
-  if (missingKeywords.length > 0) {
-    suggestions.push(`Add these technologies to your resume: ${missingKeywords.slice(0, 5).join(", ")}`);
-  }
-  
-  if (matchedKeywords.length > 0) {
-    suggestions.push(`Highlight your experience with ${matchedKeywords.slice(0, 3).join(", ")} in your summary`);
-  }
-  
-  suggestions.push("Quantify your technical achievements with specific metrics and results");
-  suggestions.push("Include relevant projects or portfolio links showcasing these technologies");
+  const score = jobTechnologies.size > 0 ? Math.round((matchedKeywords.length / jobTechnologies.size) * 100) : 0;
 
   return {
     score,
-    matchedKeywords: matchedKeywords.slice(0, 20),
-    missingKeywords: missingKeywords.slice(0, 15),
-    suggestions,
+    matchedKeywords,
+    missingKeywords,
+    suggestions: ["Add missing technologies to your resume", "Quantify your achievements with metrics"],
+    starFormatPoints: [],
+    atsOptimizations: [],
   };
 }
