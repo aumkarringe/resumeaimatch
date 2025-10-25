@@ -5,6 +5,7 @@ import { JobDescriptionSection } from "@/components/JobDescriptionSection";
 import { AnalysisSection, AnalysisResults } from "@/components/AnalysisSection";
 import { ResultsSection } from "@/components/ResultsSection";
 import { ApiKeyDialog } from "@/components/ApiKeyDialog";
+import { Navbar } from "@/components/Navbar";
 import { extractTextFromFile } from "@/lib/textParser";
 import { toast } from "@/hooks/use-toast";
 
@@ -61,6 +62,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <Navbar />
       <ApiKeyDialog open={showApiKeyDialog} onSubmit={handleApiKeySubmit} />
       
       {currentStep === "hero" && (
