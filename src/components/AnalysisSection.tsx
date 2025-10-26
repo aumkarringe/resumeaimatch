@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
-import { analyzeResumeWithGemini } from "@/lib/geminiClient";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface AnalysisSectionProps {
   onComplete: (results: AnalysisResults) => void;
   resumeText: string;
   jobDescription: string;
-  geminiApiKey: string;
 }
 
 export interface AnalysisResults {
@@ -20,7 +19,7 @@ export interface AnalysisResults {
   atsOptimizations: string[];
 }
 
-export const AnalysisSection = ({ onComplete, resumeText, jobDescription, geminiApiKey }: AnalysisSectionProps) => {
+export const AnalysisSection = ({ onComplete, resumeText, jobDescription }: AnalysisSectionProps) => {
   const [progress, setProgress] = useState(0);
   const { toast } = useToast();
 
@@ -38,12 +37,16 @@ export const AnalysisSection = ({ onComplete, resumeText, jobDescription, gemini
       }, 300);
 
       try {
-        const results = await analyzeResumeWithGemini(resumeText, jobDescription, geminiApiKey);
+        const { data, error } = await supabase.functions.invoke('analyze-resume', {
+          body: { resumeText, jobDescription }
+        });
+
+        if (error) throw error;
         
         if (!isCancelled) {
           setProgress(100);
           setTimeout(() => {
-            onComplete(results);
+            onComplete(data);
           }, 500);
         }
       } catch (error) {
@@ -51,7 +54,7 @@ export const AnalysisSection = ({ onComplete, resumeText, jobDescription, gemini
         if (!isCancelled) {
           toast({
             title: "Analysis Failed",
-            description: error instanceof Error ? error.message : "Failed to analyze resume. Please check your API key.",
+            description: error instanceof Error ? error.message : "Failed to analyze resume",
             variant: "destructive",
           });
           // Fallback to basic analysis
@@ -69,7 +72,7 @@ export const AnalysisSection = ({ onComplete, resumeText, jobDescription, gemini
       isCancelled = true;
       clearInterval(progressInterval);
     };
-  }, [resumeText, jobDescription, geminiApiKey, onComplete, toast]);
+  }, [resumeText, jobDescription, onComplete, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

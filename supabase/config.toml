@@ -1,1 +1,13 @@
 project_id = "undpqsorddrnnnnckycj"
+
+[functions.analyze-resume]
+verify_jwt = false
+
+[functions.search-contacts]
+verify_jwt = false
+
+[functions.generate-cold-email]
+verify_jwt = false
+
+[functions.generate-cover-letter]
+verify_jwt = false

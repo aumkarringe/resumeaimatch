@@ -4,7 +4,7 @@ import { UploadSection } from "@/components/UploadSection";
 import { JobDescriptionSection } from "@/components/JobDescriptionSection";
 import { AnalysisSection, AnalysisResults } from "@/components/AnalysisSection";
 import { ResultsSection } from "@/components/ResultsSection";
-import { ApiKeyDialog } from "@/components/ApiKeyDialog";
+import { ContactSearchSection } from "@/components/ContactSearchSection";
 import { Navbar } from "@/components/Navbar";
 import { extractTextFromFile } from "@/lib/textParser";
 import { toast } from "@/hooks/use-toast";
@@ -16,8 +16,6 @@ const Index = () => {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [results, setResults] = useState<AnalysisResults | null>(null);
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
 
   const handleFileUpload = async (file: File) => {
     try {
@@ -34,16 +32,6 @@ const Index = () => {
 
   const handleAnalyze = (description: string) => {
     setJobDescription(description);
-    if (!geminiApiKey) {
-      setShowApiKeyDialog(true);
-    } else {
-      setCurrentStep("analysis");
-    }
-  };
-
-  const handleApiKeySubmit = (apiKey: string) => {
-    setGeminiApiKey(apiKey);
-    setShowApiKeyDialog(false);
     setCurrentStep("analysis");
   };
 
@@ -57,13 +45,11 @@ const Index = () => {
     setResumeText("");
     setJobDescription("");
     setResults(null);
-    // Keep API key for subsequent analyses
   };
 
   return (
     <div className="min-h-screen">
       <Navbar />
-      <ApiKeyDialog open={showApiKeyDialog} onSubmit={handleApiKeySubmit} />
       
       {currentStep === "hero" && (
         <HeroSection onGetStarted={() => setCurrentStep("upload")} />
@@ -84,13 +70,15 @@ const Index = () => {
         <AnalysisSection
           resumeText={resumeText}
           jobDescription={jobDescription}
-          geminiApiKey={geminiApiKey}
           onComplete={handleAnalysisComplete}
         />
       )}
       
       {currentStep === "results" && results && (
-        <ResultsSection results={results} onReset={handleReset} />
+        <>
+          <ResultsSection results={results} onReset={handleReset} />
+          <ContactSearchSection jobDescription={jobDescription} />
+        </>
       )}
     </div>
   );

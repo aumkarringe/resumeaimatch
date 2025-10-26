@@ -4,9 +4,8 @@ import { Upload, X, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { ApiKeyDialog } from "@/components/ApiKeyDialog";
+import { supabase } from "@/integrations/supabase/client";
 import { extractTextFromFile } from "@/lib/textParser";
-import { analyzeResumeWithGemini } from "@/lib/geminiClient";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -23,8 +22,6 @@ interface ResumeData {
 const CompareResumes = () => {
   const [resumes, setResumes] = useState<ResumeData[]>([]);
   const [jobDescription, setJobDescription] = useState("");
-  const [geminiApiKey, setGeminiApiKey] = useState("");
-  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const { toast } = useToast();
 
@@ -75,21 +72,20 @@ const CompareResumes = () => {
       return;
     }
 
-    if (!geminiApiKey) {
-      setShowApiKeyDialog(true);
-      return;
-    }
-
     setAnalyzing(true);
     const analyzedResumes = await Promise.all(
       resumes.map(async (resume) => {
         try {
-          const results = await analyzeResumeWithGemini(
-            resume.text,
-            jobDescription,
-            geminiApiKey
-          );
-          return { ...resume, ...results };
+          const { data, error } = await supabase.functions.invoke('analyze-resume', {
+            body: { 
+              resumeText: resume.text,
+              jobDescription 
+            }
+          });
+
+          if (error) throw error;
+
+          return { ...resume, ...data };
         } catch (error) {
           toast({
             title: "Analysis Failed",
@@ -106,8 +102,6 @@ const CompareResumes = () => {
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
-      <ApiKeyDialog open={showApiKeyDialog} onSubmit={(key) => { setGeminiApiKey(key); setShowApiKeyDialog(false); }} />
-      
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
