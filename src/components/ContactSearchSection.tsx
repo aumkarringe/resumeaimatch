@@ -43,7 +43,10 @@ export const ContactSearchSection = ({ jobDescription, resumeText }: ContactSear
     }
 
     setSearching(true);
+    setContacts([]); // Clear previous results
     try {
+      console.log('Invoking search-contacts with:', { companyName, country });
+      
       const { data, error } = await supabase.functions.invoke('search-contacts', {
         body: {
           companyName,
@@ -52,14 +55,30 @@ export const ContactSearchSection = ({ jobDescription, resumeText }: ContactSear
         }
       });
 
-      if (error) throw error;
+      console.log('Search response:', data);
+      console.log('Search error:', error);
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+
+      if (data.error) {
+        // Handle errors returned from the edge function
+        toast({
+          title: "Search Error",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
+      }
 
       setContacts(data.contacts || []);
       
-      if (data.contacts?.length === 0) {
+      if (!data.contacts || data.contacts.length === 0) {
         toast({
           title: "No Contacts Found",
-          description: "Try adjusting your search criteria",
+          description: data.message || "Try adjusting your search criteria. Make sure your Apollo API key is valid.",
         });
       } else {
         toast({
@@ -71,7 +90,7 @@ export const ContactSearchSection = ({ jobDescription, resumeText }: ContactSear
       console.error("Search error:", error);
       toast({
         title: "Search Failed",
-        description: error instanceof Error ? error.message : "Failed to search contacts",
+        description: error instanceof Error ? error.message : "Failed to search contacts. Check console for details.",
         variant: "destructive",
       });
     } finally {

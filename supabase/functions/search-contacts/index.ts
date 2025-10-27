@@ -15,10 +15,21 @@ serve(async (req) => {
     const APOLLO_API_KEY = Deno.env.get('APOLLO_API_KEY');
 
     if (!APOLLO_API_KEY) {
-      throw new Error('APOLLO_API_KEY not configured');
+      console.error('APOLLO_API_KEY is missing');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Apollo API key not configured. Please add APOLLO_API_KEY in your secrets.',
+          contacts: []
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     console.log('Searching contacts with:', { jobTitle, companyName, region, country });
+    console.log('API Key present:', APOLLO_API_KEY ? 'Yes' : 'No');
 
     // Build search criteria
     const searchCriteria: any = {
@@ -50,6 +61,8 @@ serve(async (req) => {
       searchCriteria.person_locations = [country];
     }
 
+    console.log('Search criteria:', JSON.stringify(searchCriteria, null, 2));
+
     const response = await fetch('https://api.apollo.io/v1/mixed_people/search', {
       method: 'POST',
       headers: {
@@ -60,25 +73,73 @@ serve(async (req) => {
       body: JSON.stringify(searchCriteria),
     });
 
+    console.log('Apollo response status:', response.status);
+
     if (!response.ok) {
       const error = await response.text();
-      console.error('Apollo API error:', error);
+      console.error('Apollo API error response:', error);
+      
+      // Provide more helpful error messages
+      if (response.status === 401) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Invalid Apollo API key. Please check your APOLLO_API_KEY secret.',
+            contacts: []
+          }),
+          {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      } else if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Apollo API rate limit exceeded. Please try again later.',
+            contacts: []
+          }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
       throw new Error(`Apollo API error: ${response.status} - ${error}`);
     }
 
     const data = await response.json();
-    console.log('Apollo response:', JSON.stringify(data, null, 2));
+    console.log('Apollo response people count:', data.people?.length || 0);
+    console.log('Apollo response data keys:', Object.keys(data));
+
+    // Check if we have results
+    if (!data.people || data.people.length === 0) {
+      console.log('No contacts found in Apollo response');
+      return new Response(
+        JSON.stringify({ 
+          contacts: [],
+          message: 'No contacts found. Try broadening your search criteria.'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
 
     // Extract and format contact information
-    const contacts = (data.people || []).map((person: any) => ({
-      name: person.name || 'N/A',
-      title: person.title || 'N/A',
-      company: person.organization?.name || 'N/A',
-      email: person.email || 'N/A',
-      phone: person.phone_numbers?.[0]?.sanitized_number || 'N/A',
-      location: person.city && person.state ? `${person.city}, ${person.state}` : person.country || 'N/A',
-      linkedinUrl: person.linkedin_url || null,
-    }));
+    const contacts = data.people.map((person: any) => {
+      console.log('Processing person:', person.name);
+      return {
+        name: person.name || 'N/A',
+        title: person.title || 'N/A',
+        company: person.organization?.name || companyName || 'N/A',
+        email: person.email || 'N/A',
+        phone: person.phone_numbers?.[0]?.sanitized_number || 'N/A',
+        location: person.city && person.state ? `${person.city}, ${person.state}` : person.country || 'N/A',
+        linkedinUrl: person.linkedin_url || null,
+      };
+    });
+
+    console.log('Formatted contacts count:', contacts.length);
 
     return new Response(
       JSON.stringify({ contacts }),
