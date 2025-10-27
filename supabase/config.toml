@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.generate-cover-letter]
 verify_jwt = false
+
+[functions.smart-autofill]
+verify_jwt = false
+
+[functions.optimize-skills]
+verify_jwt = false

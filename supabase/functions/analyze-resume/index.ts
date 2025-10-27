@@ -18,7 +18,7 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY not configured');
     }
 
-    const prompt = `You are an expert ATS (Applicant Tracking System) resume analyzer. Analyze the following resume against the job description and provide detailed feedback.
+    const prompt = `You are an elite ATS (Applicant Tracking System) expert and career coach with deep knowledge of resume optimization, keyword analysis, and hiring practices. Perform an advanced, comprehensive analysis of this resume against the job description.
 
 RESUME:
 ${resumeText}
@@ -26,24 +26,75 @@ ${resumeText}
 JOB DESCRIPTION:
 ${jobDescription}
 
-Analyze and provide:
-1. A compatibility score (0-100) based on how well the resume matches the job requirements
-2. List of matched technical skills/keywords found in both resume and job description
-3. List of missing technical skills/keywords from the job description that are not in the resume
-4. 3-5 new resume bullet points in STAR format (Situation, Task, Action, Result) that the candidate should add to better match the job description
-5. ATS optimization tips specific to this resume and job description
+ADVANCED ANALYSIS REQUIREMENTS:
 
-Return your analysis in the following JSON format:
+1. **ATS Compatibility Score (0-100)**: Analyze:
+   - Keyword density and relevance
+   - Skills match percentage
+   - Experience alignment
+   - Education requirements
+   - Certifications match
+   - Format and structure
+   - Action verbs usage
+   - Quantifiable achievements
+
+2. **Matched Keywords**: List all technical skills, tools, frameworks, methodologies, and certifications found in BOTH resume and job description. Categorize by type (e.g., Programming Languages, Tools, Soft Skills).
+
+3. **Critical Missing Keywords**: Identify high-priority keywords from the job description that are ABSENT from the resume. Prioritize by importance to the role.
+
+4. **STAR Format Achievement Points**: Generate 5-7 NEW powerful bullet points using the STAR method (Situation, Task, Action, Result) that:
+   - Incorporate missing keywords naturally
+   - Include quantifiable metrics and results
+   - Use strong action verbs
+   - Demonstrate impact and value
+   - Are tailored to the target role
+
+5. **Advanced ATS Optimization Tips**: Provide 8-10 specific, actionable recommendations covering:
+   - Keyword optimization strategies
+   - Format improvements for ATS parsing
+   - Section organization
+   - Action verb enhancements
+   - Quantification opportunities
+   - Industry-specific terminology
+   - Skills section optimization
+   - Experience description improvements
+
+6. **Industry-Specific Insights**: Identify the industry and provide tailored advice for that field.
+
+7. **Recommended Action Verbs**: Suggest 10-15 powerful action verbs specific to this role and industry.
+
+8. **Competitive Edge Analysis**: What makes this resume stand out or fall short compared to top candidates?
+
+Return your analysis in this EXACT JSON format:
 {
   "score": <number 0-100>,
-  "matchedKeywords": ["keyword1", "keyword2", ...],
-  "missingKeywords": ["keyword1", "keyword2", ...],
+  "matchedKeywords": {
+    "technical": ["keyword1", ...],
+    "tools": ["tool1", ...],
+    "soft": ["skill1", ...]
+  },
+  "missingKeywords": {
+    "critical": ["keyword1", ...],
+    "important": ["keyword2", ...],
+    "nice_to_have": ["keyword3", ...]
+  },
   "suggestions": ["suggestion1", "suggestion2", ...],
-  "starFormatPoints": ["STAR point 1", "STAR point 2", ...],
-  "atsOptimizations": ["tip1", "tip2", ...]
+  "starFormatPoints": [
+    "• Spearheaded [project] resulting in [quantifiable outcome] by implementing [technology/method]",
+    ...
+  ],
+  "atsOptimizations": [
+    "tip1", "tip2", ...
+  ],
+  "industry": "Software Engineering / Marketing / etc",
+  "actionVerbs": ["verb1", "verb2", ...],
+  "competitiveEdge": {
+    "strengths": ["strength1", ...],
+    "gaps": ["gap1", ...]
+  }
 }
 
-Be specific and actionable. Focus on technical skills, tools, frameworks, and measurable achievements.`;
+Be extremely specific, actionable, and data-driven. Every suggestion should be implementable immediately.`;
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,

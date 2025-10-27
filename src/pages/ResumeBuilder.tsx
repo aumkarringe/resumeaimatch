@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Download } from "lucide-react";
+import { Plus, Trash2, Download, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LinkedInImport } from "@/components/LinkedInImport";
+import { SkillsOptimizer } from "@/components/SkillsOptimizer";
+import { ContactSearchSection } from "@/components/ContactSearchSection";
 
 interface Experience {
   id: string;
@@ -31,7 +34,17 @@ const ResumeBuilder = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [score, setScore] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showColdEmail, setShowColdEmail] = useState(false);
   const { toast } = useToast();
+
+  const handleImport = (data: any) => {
+    setName(data.name);
+    setEmail(data.email);
+    setPhone(data.phone);
+    setSummary(data.summary);
+    setSkills(data.skills);
+    setExperiences(data.experiences);
+  };
 
   const addExperience = () => {
     setExperiences([
@@ -111,6 +124,7 @@ const ResumeBuilder = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Resume Builder Form */}
           <div className="lg:col-span-2 space-y-6">
+            <LinkedInImport onImport={handleImport} />
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
               <div className="space-y-4">
@@ -148,6 +162,11 @@ const ResumeBuilder = () => {
                 onChange={(e) => setSkills(e.target.value)}
                 placeholder="React, TypeScript, Node.js, Python, AWS..."
                 className="min-h-[80px]"
+              />
+              <SkillsOptimizer 
+                currentSkills={skills}
+                jobDescription={jobDescription}
+                onOptimize={setSkills}
               />
             </Card>
 
@@ -237,9 +256,29 @@ const ResumeBuilder = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Export Resume
               </Button>
+
+              <Button 
+                onClick={() => setShowColdEmail(!showColdEmail)} 
+                className="w-full mt-3" 
+                variant="outline"
+                disabled={!name.trim() || !jobDescription.trim()}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {showColdEmail ? "Hide Cold Email" : "Generate Cold Email"}
+              </Button>
             </Card>
           </div>
         </div>
+
+        {/* Cold Email Section */}
+        {showColdEmail && (
+          <div className="mt-8">
+            <ContactSearchSection 
+              jobDescription={jobDescription} 
+              resumeText={buildResumeText()} 
+            />
+          </div>
+        )}
       </div>
     </div>
   );
