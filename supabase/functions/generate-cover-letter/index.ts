@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { resumeText, jobDescription, customPrompt } = await req.json();
+    const { resumeText, jobDescription, customPrompt, companyName, hiringManagerName } = await req.json();
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
     if (!GEMINI_API_KEY) {
@@ -27,6 +27,9 @@ ${resumeText}
 
 JOB DESCRIPTION:
 ${jobDescription}
+
+${companyName ? `COMPANY NAME: ${companyName}` : ''}
+${hiringManagerName ? `HIRING MANAGER: ${hiringManagerName}` : ''}
 
 Additional Instructions: ${customPrompt || 'Create a standard professional cover letter'}
 

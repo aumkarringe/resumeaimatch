@@ -14,6 +14,8 @@ const CoverLetterGenerator = () => {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [customPrompt, setCustomPrompt] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [hiringManagerName, setHiringManagerName] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
@@ -53,7 +55,9 @@ const CoverLetterGenerator = () => {
         body: {
           resumeText,
           jobDescription,
-          customPrompt
+          customPrompt,
+          companyName,
+          hiringManagerName
         }
       });
 
@@ -141,6 +145,22 @@ const CoverLetterGenerator = () => {
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Job Details</h2>
               <div className="space-y-4">
+                <div>
+                  <Label>Company Name (Optional)</Label>
+                  <Input
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="e.g., Google"
+                  />
+                </div>
+                <div>
+                  <Label>Hiring Manager Name (Optional)</Label>
+                  <Input
+                    value={hiringManagerName}
+                    onChange={(e) => setHiringManagerName(e.target.value)}
+                    placeholder="e.g., John Smith"
+                  />
+                </div>
                 <div>
                   <Label>Job Description</Label>
                   <Textarea

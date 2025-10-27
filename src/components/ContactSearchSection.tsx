@@ -21,9 +21,10 @@ interface Contact {
 
 interface ContactSearchSectionProps {
   jobDescription: string;
+  resumeText: string;
 }
 
-export const ContactSearchSection = ({ jobDescription }: ContactSearchSectionProps) => {
+export const ContactSearchSection = ({ jobDescription, resumeText }: ContactSearchSectionProps) => {
   const [companyName, setCompanyName] = useState("");
   const [country, setCountry] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -189,6 +190,7 @@ export const ContactSearchSection = ({ jobDescription }: ContactSearchSectionPro
           <ColdEmailGenerator
             contact={selectedContact}
             jobDescription={jobDescription}
+            resumeText={resumeText}
             onClose={() => setSelectedContact(null)}
           />
         )}
@@ -200,10 +202,11 @@ export const ContactSearchSection = ({ jobDescription }: ContactSearchSectionPro
 interface ColdEmailGeneratorProps {
   contact: Contact;
   jobDescription: string;
+  resumeText: string;
   onClose: () => void;
 }
 
-const ColdEmailGenerator = ({ contact, jobDescription, onClose }: ColdEmailGeneratorProps) => {
+const ColdEmailGenerator = ({ contact, jobDescription, resumeText, onClose }: ColdEmailGeneratorProps) => {
   const [customPrompt, setCustomPrompt] = useState("");
   const [email, setEmail] = useState<{ subject: string; body: string } | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -218,7 +221,8 @@ const ColdEmailGenerator = ({ contact, jobDescription, onClose }: ColdEmailGener
           recipientTitle: contact.title,
           companyName: contact.company,
           customPrompt,
-          jobDescription
+          jobDescription,
+          resumeText
         }
       });
 

@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { recipientName, recipientTitle, companyName, customPrompt, jobDescription } = await req.json();
+    const { recipientName, recipientTitle, companyName, customPrompt, jobDescription, resumeText } = await req.json();
     const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
     if (!GEMINI_API_KEY) {
@@ -26,7 +26,10 @@ Generate a compelling cold email with the following context:
 - Company: ${companyName}
 - Job Description: ${jobDescription}
 
-Additional Instructions: ${customPrompt}
+MY RESUME:
+${resumeText}
+
+Additional Instructions: ${customPrompt || 'Write a professional, personalized cold email'}
 
 Write a professional, personalized cold email that:
 1. Has a compelling subject line

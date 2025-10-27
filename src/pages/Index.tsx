@@ -77,7 +77,7 @@ const Index = () => {
       {currentStep === "results" && results && (
         <>
           <ResultsSection results={results} onReset={handleReset} />
-          <ContactSearchSection jobDescription={jobDescription} />
+          <ContactSearchSection jobDescription={jobDescription} resumeText={resumeText} />
         </>
       )}
     </div>
