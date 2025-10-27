@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Download, Mail } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Plus, Trash2, Download } from "lucide-react";
+import { ApiKeyDialog } from "@/components/ApiKeyDialog";
+import { analyzeResumeWithGemini } from "@/lib/geminiClient";
 import { useToast } from "@/hooks/use-toast";
-import { LinkedInImport } from "@/components/LinkedInImport";
-import { SkillsOptimizer } from "@/components/SkillsOptimizer";
-import { ContactSearchSection } from "@/components/ContactSearchSection";
 
 interface Experience {
   id: string;
@@ -34,17 +32,9 @@ const ResumeBuilder = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [score, setScore] = useState(0);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showColdEmail, setShowColdEmail] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const { toast } = useToast();
-
-  const handleImport = (data: any) => {
-    setName(data.name);
-    setEmail(data.email);
-    setPhone(data.phone);
-    setSummary(data.summary);
-    setSkills(data.skills);
-    setExperiences(data.experiences);
-  };
 
   const addExperience = () => {
     setExperiences([
@@ -72,19 +62,15 @@ const ResumeBuilder = () => {
 
   useEffect(() => {
     const analyzeResume = async () => {
-      if (!jobDescription.trim()) return;
+      if (!jobDescription.trim() || !geminiApiKey) return;
 
       const resumeText = buildResumeText();
       if (!resumeText.trim()) return;
 
       try {
-        const { data, error } = await supabase.functions.invoke('analyze-resume', {
-          body: { resumeText, jobDescription }
-        });
-        if (!error) {
-          setScore(data.score);
-          setSuggestions(data.suggestions);
-        }
+        const results = await analyzeResumeWithGemini(resumeText, jobDescription, geminiApiKey);
+        setScore(results.score);
+        setSuggestions(results.suggestions);
       } catch (error) {
         // Silent fail for real-time scoring
       }
@@ -92,7 +78,7 @@ const ResumeBuilder = () => {
 
     const debounce = setTimeout(analyzeResume, 1000);
     return () => clearTimeout(debounce);
-  }, [name, email, phone, summary, skills, experiences, jobDescription]);
+  }, [name, email, phone, summary, skills, experiences, jobDescription, geminiApiKey]);
 
   const handleExport = () => {
     const resumeText = buildResumeText();
@@ -107,6 +93,8 @@ const ResumeBuilder = () => {
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
+      <ApiKeyDialog open={showApiKeyDialog} onSubmit={(key) => { setGeminiApiKey(key); setShowApiKeyDialog(false); }} />
+      
       <div className="container mx-auto max-w-7xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -124,7 +112,6 @@ const ResumeBuilder = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Resume Builder Form */}
           <div className="lg:col-span-2 space-y-6">
-            <LinkedInImport onImport={handleImport} />
             <Card className="p-6">
               <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
               <div className="space-y-4">
@@ -162,11 +149,6 @@ const ResumeBuilder = () => {
                 onChange={(e) => setSkills(e.target.value)}
                 placeholder="React, TypeScript, Node.js, Python, AWS..."
                 className="min-h-[80px]"
-              />
-              <SkillsOptimizer 
-                currentSkills={skills}
-                jobDescription={jobDescription}
-                onOptimize={setSkills}
               />
             </Card>
 
@@ -225,9 +207,15 @@ const ResumeBuilder = () => {
             <Card className="p-6 sticky top-24">
               <h2 className="text-xl font-semibold mb-4">Live ATS Score</h2>
               
-              <div className="scale-50 -my-20">
-                <ScoreGauge score={score} />
-              </div>
+              {!geminiApiKey ? (
+                <Button onClick={() => setShowApiKeyDialog(true)} className="w-full mb-4">
+                  Connect Gemini API
+                </Button>
+              ) : (
+                <div className="scale-50 -my-20">
+                  <ScoreGauge score={score} />
+                </div>
+              )}
 
               <div className="mt-6">
                 <Label>Target Job Description</Label>
@@ -256,29 +244,9 @@ const ResumeBuilder = () => {
                 <Download className="w-4 h-4 mr-2" />
                 Export Resume
               </Button>
-
-              <Button 
-                onClick={() => setShowColdEmail(!showColdEmail)} 
-                className="w-full mt-3" 
-                variant="outline"
-                disabled={!name.trim() || !jobDescription.trim()}
-              >
-                <Mail className="w-4 h-4 mr-2" />
-                {showColdEmail ? "Hide Cold Email" : "Generate Cold Email"}
-              </Button>
             </Card>
           </div>
         </div>
-
-        {/* Cold Email Section */}
-        {showColdEmail && (
-          <div className="mt-8">
-            <ContactSearchSection 
-              jobDescription={jobDescription} 
-              resumeText={buildResumeText()} 
-            />
-          </div>
-        )}
       </div>
     </div>
   );

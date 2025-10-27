@@ -6,18 +6,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Copy, Download, Sparkles } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { ApiKeyDialog } from "@/components/ApiKeyDialog";
 import { extractTextFromFile } from "@/lib/textParser";
 import { useToast } from "@/hooks/use-toast";
 
 const CoverLetterGenerator = () => {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
-  const [customPrompt, setCustomPrompt] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [hiringManagerName, setHiringManagerName] = useState("");
+  const [hiringManager, setHiringManager] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const { toast } = useToast();
 
   const handleFileUpload = async (file: File | null) => {
@@ -48,22 +49,56 @@ const CoverLetterGenerator = () => {
       return;
     }
 
+    if (!geminiApiKey) {
+      setShowApiKeyDialog(true);
+      return;
+    }
+
     setGenerating(true);
     
+    const prompt = `You are an expert cover letter writer. Create a professional, compelling cover letter based on the following information:
+
+RESUME:
+${resumeText}
+
+JOB DESCRIPTION:
+${jobDescription}
+
+${companyName ? `COMPANY NAME: ${companyName}` : ""}
+${hiringManager ? `HIRING MANAGER: ${hiringManager}` : ""}
+
+Write a cover letter that:
+1. Opens with a strong hook that shows enthusiasm and relevant experience
+2. Highlights 2-3 key achievements from the resume that directly match the job requirements
+3. Demonstrates understanding of the company and role
+4. Shows personality while remaining professional
+5. Closes with a clear call to action
+
+Keep it concise (3-4 paragraphs), engaging, and tailored to this specific role. Use professional business letter format.`;
+
     try {
-      const { data, error } = await supabase.functions.invoke('generate-cover-letter', {
-        body: {
-          resumeText,
-          jobDescription,
-          customPrompt,
-          companyName,
-          hiringManagerName
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.8,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 2048,
+            },
+          }),
         }
-      });
+      );
 
-      if (error) throw error;
+      if (!response.ok) throw new Error("Failed to generate cover letter");
 
-      setCoverLetter(data.coverLetter);
+      const data = await response.json();
+      const generatedText = data.candidates[0].content.parts[0].text;
+      setCoverLetter(generatedText);
       
       toast({
         title: "Cover Letter Generated",
@@ -90,13 +125,15 @@ const CoverLetterGenerator = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Cover_Letter.txt`;
+    a.download = `Cover_Letter_${companyName || "Job"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
+      <ApiKeyDialog open={showApiKeyDialog} onSubmit={(key) => { setGeminiApiKey(key); setShowApiKeyDialog(false); }} />
+      
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -154,11 +191,11 @@ const CoverLetterGenerator = () => {
                   />
                 </div>
                 <div>
-                  <Label>Hiring Manager Name (Optional)</Label>
+                  <Label>Hiring Manager (Optional)</Label>
                   <Input
-                    value={hiringManagerName}
-                    onChange={(e) => setHiringManagerName(e.target.value)}
-                    placeholder="e.g., John Smith"
+                    value={hiringManager}
+                    onChange={(e) => setHiringManager(e.target.value)}
+                    placeholder="e.g., Sarah Johnson"
                   />
                 </div>
                 <div>
@@ -168,14 +205,6 @@ const CoverLetterGenerator = () => {
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste the job description here..."
                     className="min-h-[200px]"
-                  />
-                </div>
-                <div>
-                  <Label>Custom Instructions (Optional)</Label>
-                  <Input
-                    value={customPrompt}
-                    onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="e.g., Keep it casual, emphasize my leadership skills"
                   />
                 </div>
               </div>
