@@ -140,11 +140,41 @@ Be extremely specific, actionable, and data-driven. Every suggestion should be i
 
     const result = JSON.parse(jsonMatch[1] || jsonMatch[0]);
 
+    // Flatten matched keywords if they're structured
+    let matchedKeywords = [];
+    if (result.matchedKeywords) {
+      if (Array.isArray(result.matchedKeywords)) {
+        matchedKeywords = result.matchedKeywords;
+      } else if (typeof result.matchedKeywords === 'object') {
+        // Flatten all categories into one array
+        matchedKeywords = [
+          ...(result.matchedKeywords.technical || []),
+          ...(result.matchedKeywords.tools || []),
+          ...(result.matchedKeywords.soft || [])
+        ];
+      }
+    }
+
+    // Flatten missing keywords if they're structured
+    let missingKeywords = [];
+    if (result.missingKeywords) {
+      if (Array.isArray(result.missingKeywords)) {
+        missingKeywords = result.missingKeywords;
+      } else if (typeof result.missingKeywords === 'object') {
+        // Flatten all priority categories, with critical first
+        missingKeywords = [
+          ...(result.missingKeywords.critical || []),
+          ...(result.missingKeywords.important || []),
+          ...(result.missingKeywords.nice_to_have || [])
+        ];
+      }
+    }
+
     return new Response(
       JSON.stringify({
         score: Math.min(Math.max(result.score || 0, 0), 100),
-        matchedKeywords: result.matchedKeywords || [],
-        missingKeywords: result.missingKeywords || [],
+        matchedKeywords,
+        missingKeywords,
         suggestions: result.suggestions || [],
         starFormatPoints: result.starFormatPoints || [],
         atsOptimizations: result.atsOptimizations || [],
